@@ -1,0 +1,92 @@
+name: macOS GUI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  macos-gui:
+    runs-on: macos-15-intel
+
+    steps:
+
+      # ==========================================
+      # 1. Cek macOS
+      # ==========================================
+      - name: Check macOS
+        run: |
+          sw_vers
+          uname -a
+
+      # ==========================================
+      # 2. Cek Xcode
+      # ==========================================
+      - name: Check Xcode
+        run: |
+          xcodebuild -version
+
+      # ==========================================
+      # 3. Install Homebrew packages
+      # ==========================================
+      - name: Install packages
+        run: |
+          brew update
+          brew install tmate
+
+      # ==========================================
+      # 4. Aktifkan Remote Management
+      # ==========================================
+      - name: Enable Remote Management
+        run: |
+          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+            -activate \
+            -configure \
+            -access \
+            -on \
+            -configure \
+            -allowAccessFor \
+            -allUsers \
+            -configure \
+            -restart \
+            -agent \
+            -privs \
+            -all
+
+      # ==========================================
+      # 5. Coba aktifkan Screen Sharing
+      # ==========================================
+      - name: Enable Screen Sharing
+        run: |
+          sudo launchctl load -w \
+            /System/Library/LaunchDaemons/com.apple.screensharing.plist || true
+
+      # ==========================================
+      # 6. Cek service
+      # ==========================================
+      - name: Check services
+        run: |
+          sudo launchctl list | grep -i screen || true
+          sudo launchctl list | grep -i remote || true
+
+      # ==========================================
+      # 7. Buka SSH untuk akses terminal
+      # ==========================================
+      - name: Start SSH session
+        uses: mxschmitt/action-tmate@v3
+
+      # ==========================================
+      # 8. Tahan VM tetap hidup
+      # ==========================================
+      - name: Keep Mac alive
+        run: |
+          echo "======================================"
+          echo "MACOS RUNNER AKTIF"
+          echo "======================================"
+          echo "Jangan tutup workflow ini."
+          echo ""
+          echo "VM akan tetap hidup selama job berjalan."
+          echo ""
+
+          while true; do
+            echo "MacOS masih aktif: $(date)"
+            sleep 300
+          done
